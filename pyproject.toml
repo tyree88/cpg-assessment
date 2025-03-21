@@ -1,0 +1,13 @@
+[project]
+name = "dataplor"
+version = "0.1.0"
+description = "Data quality assessment and cleaning tool for point-of-interest data"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "streamlit>=1.30.0",
+    "pandas>=2.0.0",
+    "duckdb>=0.9.0",
+    "numpy>=1.24.0",
+    "openpyxl>=3.1.0",  # For Excel support
+]

@@ -1,0 +1,68 @@
+
+# Virtual environments
+.venv
+
+# Credentials and configs
+*.env
+*.ini
+*config.json
+*credentials*
+CLAUDE.md
+
+# Local development environments
+.vscode/
+.idea/
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+
+# Database files
+*.db
+*.sqlite
+
+# Python environment
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+# Python-generated files
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Coverage reports
+.coverage
+htmlcov/
+coverage.xml
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Data
+data/
+datasets/
+
+# Documentation
+docs/_build/
+
+# Environment specific
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Streamlit
+.streamlit/
