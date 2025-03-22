@@ -118,6 +118,34 @@ The application will open in your default web browser with the following tabs:
 
 ### Prefect Workflow Integration
 
+#### Architecture Design
+
+The Prefect integration follows a data-centric architecture where the data loading component serves as the central flow, with all other functionality connected as tasks within this flow:
+
+```ascii
+Data Loading Flow
+    ├── Data Quality Assessment Tasks
+    │   ├── Analyze Data
+    │   └── Identify Issues
+    ├── Data Cleaning Tasks
+    │   ├── Generate Recommendations
+    │   └── Apply Cleaning Operations
+    └── CPG Analysis Tasks
+        ├── Chain Store Analysis
+        ├── Territory Coverage
+        └── Retail Segment Analysis
+```
+
+This architecture provides several benefits:
+
+- **Single Source of Truth**: The data loading component controls all data access, ensuring consistency
+- **Clear Dependencies**: All tasks depend on the data loading flow, creating a clear execution path
+- **Simplified Orchestration**: Prefect manages task dependencies and execution order automatically
+- **Improved Observability**: Centralized flow makes it easier to monitor the entire data pipeline
+- **Scalability**: Tasks can be executed in parallel where dependencies allow
+
+#### Planned Enhancements
+
 - Separate UI from processing logic for better maintainability
 - Add scheduling capabilities for regular data quality checks
 - Implement notification systems for data quality alerts

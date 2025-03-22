@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-
+from components.ui_helpers import render_advanced_options
 def display_data_overview(analysis_tabs):
     """Display data overview including basic statistics and sample data."""
     with analysis_tabs[0]:
@@ -37,6 +37,9 @@ def display_data_overview(analysis_tabs):
             })
         
         st.dataframe(pd.DataFrame(column_info), use_container_width=True)
+        
+
+        render_advanced_options()
 
 def display_quality_issues(analysis_tabs):
     """Display data quality issues categorized by severity."""

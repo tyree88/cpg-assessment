@@ -3,10 +3,12 @@ import streamlit as st
 import duckdb
 import json
 import re
+from prefect import task
 
 # Connect to MotherDuck database
 con = duckdb.connect('md:my_db')
 
+@task(name="Identify Data Quality Issues for Cleaning", description="Identify data quality issues for cleaning", tags=["data-quality", "cleaning"])
 def identify_data_quality_issues(df, analysis, table_name):
     """Identify data quality issues with a focus on CPG and point-of-interest data"""
     issues = {}
@@ -277,6 +279,7 @@ def identify_data_quality_issues(df, analysis, table_name):
     
     return issues
 
+@task(name="Generate Cleaning Recommendations", description="Generate recommendations for cleaning data based on identified issues", tags=["data-quality", "cleaning"])
 def generate_cleaning_recommendations(df, issues, table_name):
     """Generate recommendations for cleaning data based on identified issues"""
     recommendations = []
@@ -403,6 +406,7 @@ def generate_cleaning_recommendations(df, issues, table_name):
     
     return recommendations
 
+@task(name="Clean Data", description="Apply cleaning steps to the data", tags=["cleaning"])
 def clean_data(df, table_name, cleaning_steps):
     """Apply cleaning steps to the data"""
     # Create a copy of the dataframe to avoid modifying the original
@@ -521,6 +525,7 @@ def clean_data(df, table_name, cleaning_steps):
     
     return cleaned_df, changes
 
+@task(name="Save Cleaned Data", description="Save cleaned data to a new table in DuckDB", tags=["cleaning", "database"])
 def save_cleaned_data(df, original_table_name):
     """Save cleaned data to a new table in DuckDB"""
     try:

@@ -22,8 +22,20 @@ Usage:
 import duckdb
 import pandas as pd
 from typing import Dict, Tuple, Optional
+from prefect import task, flow
+
+from util.sql_queries import (
+    get_chain_store_targets_query,
+    get_active_distribution_points_query,
+    get_distribution_gaps_query,
+    get_retail_segments_query,
+    get_territory_coverage_query,
+    get_data_completeness_query
+)
+from util.database import get_db_connection
 
 
+@task(name="Connect to Database", description="Connect to DuckDB database and verify table exists")
 def connect_db(db_path: str, table_name: str = 'boisedemodatasampleaug') -> Tuple[duckdb.DuckDBPyConnection, str]:
     """
     Connect to DuckDB database and verify table exists.
@@ -50,6 +62,7 @@ def connect_db(db_path: str, table_name: str = 'boisedemodatasampleaug') -> Tupl
 # 1. STORE/RETAILER TARGETING & DISTRIBUTION PLANNING
 # ===============================================
 
+@task(name="Get Active Distribution Points", description="Identify active retail and grocery locations for distribution planning", tags=["cpg-analysis"])
 def get_active_distribution_points(
     conn: duckdb.DuckDBPyConnection, 
     table_name: str = 'boisedemodatasampleaug',
@@ -68,36 +81,11 @@ def get_active_distribution_points(
     Returns:
         DataFrame with active retail/grocery locations
     """
-    query = f"""
-    SELECT 
-        dataplor_id,
-        name,
-        chain_name,
-        main_category,
-        sub_category,
-        address,
-        city,
-        state,
-        postal_code,
-        latitude,
-        longitude,
-        open_closed_status,
-        data_quality_confidence_score
-    FROM {table_name}
-    WHERE main_category IN ('retail', 'convenience_and_grocery_stores')
-        AND open_closed_status = 'open'
-        AND address IS NOT NULL
-        AND data_quality_confidence_score >= {min_confidence}
-    """
-    
-    if city and city != 'All Cities':
-        query += f" AND city = '{city}'"
-        
-    query += " ORDER BY city, data_quality_confidence_score DESC"
-    
+    query = get_active_distribution_points_query(table_name, min_confidence, city)
     return conn.execute(query).df()
 
 
+@task(name="Analyze Delivery Windows", description="Analyze delivery windows based on business hours", tags=["cpg-analysis"])
 def analyze_delivery_windows(
     conn: duckdb.DuckDBPyConnection, 
     table_name: str = 'boisedemodatasampleaug',
@@ -151,6 +139,7 @@ def analyze_delivery_windows(
     return conn.execute(query).df()
 
 
+@task(name="Identify Chain Store Targets", description="Identify chain stores with multiple locations for efficient distribution deals", tags=["cpg-analysis"])
 def identify_chain_store_targets(
     conn: duckdb.DuckDBPyConnection, 
     table_name: str = 'boisedemodatasampleaug',
@@ -167,27 +156,11 @@ def identify_chain_store_targets(
     Returns:
         DataFrame with chain store information
     """
-    query = f"""
-    SELECT 
-        chain_name,
-        COUNT(*) AS location_count,
-        STRING_AGG(DISTINCT city, ', ') AS cities,
-        MIN(data_quality_confidence_score) AS min_confidence,
-        MAX(data_quality_confidence_score) AS max_confidence,
-        AVG(data_quality_confidence_score) AS avg_confidence
-    FROM {table_name}
-    WHERE main_category IN ('retail', 'convenience_and_grocery_stores')
-        AND open_closed_status = 'open'
-        AND chain_id IS NOT NULL
-        AND chain_id != ''
-    GROUP BY chain_name
-    HAVING COUNT(*) >= {min_locations}
-    ORDER BY location_count DESC
-    """
-    
+    query = get_chain_store_targets_query(table_name, min_locations)
     return conn.execute(query).df()
 
 
+@task(name="Find Distribution Gaps", description="Identify cities with limited retail coverage", tags=["cpg-analysis"])
 def find_distribution_gaps(
     conn: duckdb.DuckDBPyConnection, 
     table_name: str = 'boisedemodatasampleaug',
@@ -204,19 +177,7 @@ def find_distribution_gaps(
     Returns:
         DataFrame with retail distribution gaps by city
     """
-    query = f"""
-    SELECT
-        city,
-        COUNT(*) AS total_locations,
-        SUM(CASE WHEN main_category = 'retail' THEN 1 ELSE 0 END) AS retail_locations,
-        SUM(CASE WHEN main_category = 'convenience_and_grocery_stores' THEN 1 ELSE 0 END) AS grocery_locations,
-        (COUNT(*) * 1.0 / (SELECT COUNT(*) FROM {table_name} WHERE city = b.city)) * 100 AS retail_percentage
-    FROM {table_name} b
-    WHERE open_closed_status = 'open'
-    GROUP BY city
-    HAVING COUNT(*) >= {min_locations}
-    ORDER BY retail_percentage
-    """
+    query = get_distribution_gaps_query(table_name, min_locations)
     
     return conn.execute(query).df()
 
@@ -225,6 +186,7 @@ def find_distribution_gaps(
 # 2. MARKET ANALYSIS & COMPETITIVE INTELLIGENCE
 # ===============================================
 
+@task(name="Analyze Retail Segments", description="Analyze the distribution of retail categories", tags=["cpg-analysis"])
 def analyze_retail_segments(
     conn: duckdb.DuckDBPyConnection, 
     table_name: str = 'boisedemodatasampleaug'
@@ -239,25 +201,12 @@ def analyze_retail_segments(
     Returns:
         DataFrame with retail segment analysis
     """
-    query = f"""
-    SELECT 
-        main_category,
-        sub_category,
-        COUNT(*) AS location_count,
-        ROUND(AVG(CAST(popularity_score AS FLOAT))) AS avg_popularity,
-        ROUND(AVG(CAST(sentiment_score AS FLOAT)), 2) AS avg_sentiment,
-        COUNT(CASE WHEN price_level IS NOT NULL THEN 1 END) AS has_price_data,
-        STRING_AGG(DISTINCT price_level, ', ') AS price_levels
-    FROM {table_name}
-    WHERE main_category IN ('retail', 'convenience_and_grocery_stores')
-        AND open_closed_status = 'open'
-    GROUP BY main_category, sub_category
-    ORDER BY location_count DESC
-    """
+    query = get_retail_segments_query(table_name)
     
     return conn.execute(query).df()
 
 
+@task(name="Analyze Competitive Density", description="Map retail density by postal code for competitive intelligence", tags=["cpg-analysis"])
 def analyze_competitive_density(
     conn: duckdb.DuckDBPyConnection, 
     table_name: str = 'boisedemodatasampleaug',
@@ -295,6 +244,7 @@ def analyze_competitive_density(
     return conn.execute(query).df()
 
 
+@task(name="Compare Customer Engagement", description="Compare customer engagement metrics across retail categories", tags=["cpg-analysis"])
 def compare_customer_engagement(
     conn: duckdb.DuckDBPyConnection, 
     table_name: str = 'boisedemodatasampleaug',
@@ -334,6 +284,7 @@ def compare_customer_engagement(
 # 3. TERRITORY MANAGEMENT
 # ===============================================
 
+@task(name="Analyze Territory Coverage", description="Map retail distribution by city for sales territory planning", tags=["cpg-analysis"])
 def analyze_territory_coverage(
     conn: duckdb.DuckDBPyConnection, 
     table_name: str = 'boisedemodatasampleaug'
@@ -348,24 +299,12 @@ def analyze_territory_coverage(
     Returns:
         DataFrame with territory coverage analysis
     """
-    query = f"""
-    SELECT 
-        city,
-        COUNT(*) AS total_locations,
-        SUM(CASE WHEN main_category = 'retail' THEN 1 ELSE 0 END) AS retail_locations,
-        SUM(CASE WHEN main_category = 'convenience_and_grocery_stores' THEN 1 ELSE 0 END) AS grocery_locations,
-        SUM(CASE WHEN chain_id IS NOT NULL AND chain_id != '' THEN 1 ELSE 0 END) AS chain_locations,
-        SUM(CASE WHEN chain_id IS NULL OR chain_id = '' THEN 1 ELSE 0 END) AS independent_locations,
-        COUNT(DISTINCT sub_category) AS retail_category_diversity
-    FROM {table_name}
-    WHERE open_closed_status = 'open'
-    GROUP BY city
-    ORDER BY total_locations DESC
-    """
+    query = get_territory_coverage_query(table_name)
     
     return conn.execute(query).df()
 
 
+@task(name="Analyze Geographic Clusters", description="Identify retail clusters for efficient territory visits", tags=["cpg-analysis"])
 def analyze_geographic_clusters(
     conn: duckdb.DuckDBPyConnection, 
     table_name: str = 'boisedemodatasampleaug',
@@ -407,6 +346,7 @@ def analyze_geographic_clusters(
 # 4. DATA QUALITY ASSESSMENT
 # ===============================================
 
+@task(name="Assess Critical Data Completeness", description="Assess completeness of critical fields for CPG operations", tags=["cpg-analysis", "data-quality"])
 def assess_critical_data_completeness(
     conn: duckdb.DuckDBPyConnection, 
     table_name: str = 'boisedemodatasampleaug'
@@ -421,26 +361,12 @@ def assess_critical_data_completeness(
     Returns:
         DataFrame with data completeness assessment
     """
-    query = f"""
-    SELECT
-        'Distribution Data Quality' AS assessment,
-        COUNT(*) AS total_locations,
-        SUM(CASE WHEN address IS NULL THEN 1 ELSE 0 END) AS missing_address,
-        SUM(CASE WHEN address IS NULL THEN 1 ELSE 0 END) * 100.0 / COUNT(*) AS missing_address_pct,
-        SUM(CASE WHEN monday_open IS NULL OR monday_close IS NULL THEN 1 ELSE 0 END) AS missing_hours,
-        SUM(CASE WHEN monday_open IS NULL OR monday_close IS NULL THEN 1 ELSE 0 END) * 100.0 / COUNT(*) AS missing_hours_pct,
-        SUM(CASE WHEN website IS NULL THEN 1 ELSE 0 END) AS missing_website,
-        SUM(CASE WHEN website IS NULL THEN 1 ELSE 0 END) * 100.0 / COUNT(*) AS missing_website_pct,
-        SUM(CASE WHEN data_quality_confidence_score < 0.7 THEN 1 ELSE 0 END) AS low_confidence_records,
-        SUM(CASE WHEN data_quality_confidence_score < 0.7 THEN 1 ELSE 0 END) * 100.0 / COUNT(*) AS low_confidence_pct
-    FROM {table_name}
-    WHERE main_category IN ('retail', 'convenience_and_grocery_stores')
-        AND open_closed_status = 'open'
-    """
+    query = get_data_completeness_query(table_name)
     
     return conn.execute(query).df()
 
 
+@task(name="Assess Chain Data Quality", description="Assess data quality for important CPG retail chains", tags=["cpg-analysis", "data-quality"])
 def assess_chain_data_quality(
     conn: duckdb.DuckDBPyConnection, 
     table_name: str = 'boisedemodatasampleaug',
@@ -478,15 +404,16 @@ def assess_chain_data_quality(
     return conn.execute(query).df()
 
 
+@flow(name="CPG Analysis Flow", description="Run all CPG data analyses and return results")
 def run_all_analyses(
-    conn: duckdb.DuckDBPyConnection, 
+    db_path: str = 'md:my_db', 
     table_name: str = 'boisedemodatasampleaug'
 ) -> Dict[str, pd.DataFrame]:
     """
     Run all CPG data analyses and return results in a dictionary.
     
     Args:
-        conn: DuckDB database connection
+        db_path: Path to the DuckDB database
         table_name: Name of the table containing location data
         
     Returns:
@@ -494,24 +421,25 @@ def run_all_analyses(
     """
     results = {}
     
-    # Distribution Planning
-    results['distribution_points'] = get_active_distribution_points(conn, table_name)
-    results['delivery_windows'] = analyze_delivery_windows(conn, table_name)
-    results['chain_targets'] = identify_chain_store_targets(conn, table_name)
-    results['distribution_gaps'] = find_distribution_gaps(conn, table_name)
-    
-    # Market Analysis
-    results['retail_segments'] = analyze_retail_segments(conn, table_name)
-    results['competitive_density'] = analyze_competitive_density(conn, table_name)
-    results['customer_engagement'] = compare_customer_engagement(conn, table_name)
-    
-    # Territory Management
-    results['territory_coverage'] = analyze_territory_coverage(conn, table_name)
-    results['geographic_clusters'] = analyze_geographic_clusters(conn, table_name)
-    
-    # Data Quality
-    results['data_completeness'] = assess_critical_data_completeness(conn, table_name)
-    results['chain_data_quality'] = assess_chain_data_quality(conn, table_name)
+    with get_db_connection(db_path) as conn:
+        # Distribution Planning
+        results['distribution_points'] = get_active_distribution_points(conn, table_name)
+        results['delivery_windows'] = analyze_delivery_windows(conn, table_name)
+        results['chain_targets'] = identify_chain_store_targets(conn, table_name)
+        results['distribution_gaps'] = find_distribution_gaps(conn, table_name)
+        
+        # Market Analysis
+        results['retail_segments'] = analyze_retail_segments(conn, table_name)
+        results['competitive_density'] = analyze_competitive_density(conn, table_name)
+        results['customer_engagement'] = compare_customer_engagement(conn, table_name)
+        
+        # Territory Management
+        results['territory_coverage'] = analyze_territory_coverage(conn, table_name)
+        results['geographic_clusters'] = analyze_geographic_clusters(conn, table_name)
+        
+        # Data Quality
+        results['data_completeness'] = assess_critical_data_completeness(conn, table_name)
+        results['chain_data_quality'] = assess_chain_data_quality(conn, table_name)
     
     return results
 
