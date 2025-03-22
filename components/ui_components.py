@@ -96,9 +96,9 @@ def create_info_box(title: str, content: str, box_type: str = "info") -> None:
     
     style = styles.get(box_type, styles["info"])
     
-    # Create the info box
+    # Create the info box with reduced bottom margin
     st.markdown(f"""
-    <div style="background-color: {style['bg']}; padding: 1rem; border-radius: 0.5rem; margin: 1rem 0;">
+    <div style="background-color: {style['bg']}; padding: 1rem; border-radius: 0.5rem; margin: 1rem 0 0.5rem 0;">
         <div style="display: flex; align-items: center; margin-bottom: 0.5rem;">
             <span style="font-size: 1.2rem; margin-right: 0.5rem;">{style['icon']}</span>
             <h4 style="margin: 0; color: {style['color']};">{title}</h4>

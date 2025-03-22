@@ -7,8 +7,6 @@ This file has been refactored to use smaller, reusable components for better mai
 
 import streamlit as st
 import time
-import pandas as pd
-import numpy as np
 
 # Import utility modules
 from util.analysis import analyze_data
@@ -18,9 +16,9 @@ from util.styles import apply_all_styles
 # Import components
 from components.data_analysis import display_column_analysis, display_data_overview
 from components.data_cleaning import display_data_completeness_options, display_deduplication_options, display_basic_cleaning_options
-from components.cpg_metrics import render_cpg_metrics_tabs
 from components.data_report import render_data_quality_report
-from components.ui_components import create_metric_card, create_progress_steps, create_info_box
+from components.ui_components import create_progress_steps, create_info_box
+from components.cpg_queries import display_cpg_analysis_queries
 from components.ui_helpers import (
     render_no_data_message, 
     render_analysis_progress, 
@@ -233,24 +231,13 @@ def render_report_tab():
 
 def render_cpg_analysis_tab():
     """Render the CPG Analysis tab with specialized CPG queries and visualizations."""
-    st.markdown('<h2 class="sub-header">CPG Analysis</h2>', unsafe_allow_html=True)
-    
     # Check if data has been loaded
     if st.session_state.df is None or st.session_state.table_name is None:
         render_no_data_message("CPG analysis")
         return
     
-    # Create tabs for CPG metrics and queries
-    cpg_tabs = st.tabs(["Data Quality Metrics", "Analysis Queries"])
-    
-    # Tab 1: CPG Data Quality Metrics
-    with cpg_tabs[0]:
-        render_cpg_metrics_tabs()
-        
     # Tab 2: CPG Analysis Queries
-    with cpg_tabs[1]:
-        from components.cpg_queries import display_cpg_analysis_queries
-        display_cpg_analysis_queries()
+    display_cpg_analysis_queries()
 
 
 def toggle_advanced_options():
@@ -286,7 +273,7 @@ def main():
                 st.success(f"Loaded {len(df)} records from {table_name}")
                 # Show workflow progress steps immediately after success message
                 create_progress_steps(
-                    ["Load Data", "Analyze", "Clean Data", "Generate Report"],
+                    ["Load Data", "Analyze", "Clean Data","CPG Queries", "Generate Report"],
                     st.session_state.active_step,
                     st.session_state.completed_steps
                 )
@@ -294,7 +281,7 @@ def main():
                 st.error(f"Failed to load data from {selected_table}. Please check the database connection.")
     
     # Create tabs with icons for better visual hierarchy
-    tabs = st.tabs(["🏠 Overview", "📊 Data Analysis", "🧹 Data Cleaning", "🛒 CPG Analysis", "📝 Report"])
+    tabs = st.tabs(["🏠 Overview", "📊 Data Analysis", "🧹 Data Cleaning", "🛒 CPG Queries", "📝 Report"])
     
     # Tab 1: Overview
     with tabs[0]:

@@ -142,19 +142,22 @@ def render_welcome_section():
     
     st.markdown("<h3 class='section-header'>📋 Getting Started</h3>", unsafe_allow_html=True)
     create_info_box(
-        "Welcome to DataPlor!", 
+        "Welcome Your CPG Data Quality Assessment Tool!", 
         """
-        This tool helps you assess and improve data quality for CPG data.
-        Follow these simple steps:
-        1. Select your data source below
-        2. Explore the analysis in the tabs
-        3. Generate recommendations and reports
+        This tool is designed to provide an brief summary of my finding, my proposed method to handle data quality issues at scale and any assumptions on the data.
+        You must Load the data from the duckdb first to get started.
+        This App includes the following sections:
+        1. Overview of my findings and a summary of my proposed method to handle data quality issues at scale.
+        2. Data Overview and Analysis to show the table and some basic analysis.
+        3. Data Cleaning to show the recommendations and reports.
+        4. CPG Queries to show the queries and results.
+        5. Generate recommendations and reports that I would like to transmit to the prospect.
         """,
         "info"
     )
     
-    # Add data loader element below the welcome message
-    st.markdown("<h4 style='margin-top: 1rem;'>Select Your Data Source</h4>", unsafe_allow_html=True)
+    # Add data loader element below the welcome message with minimal spacing
+    st.markdown("<h4 style='margin-top: 0.5rem; margin-bottom: 0.5rem;'>Select Your Data Source</h4>", unsafe_allow_html=True)
     
     # Render data source selector
     selected_table, use_sample, load_clicked = render_data_source_selector()

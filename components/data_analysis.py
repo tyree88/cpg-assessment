@@ -71,7 +71,6 @@ def display_quality_issues(analysis_tabs):
         if 'quality_score' in st.session_state.issues:
             st.subheader("Data Quality Score")
             score = st.session_state.issues['quality_score']
-            st.progress(score / 100)
             col1, col2 = st.columns([1, 3])
             with col1:
                 st.metric("Quality Score", score)
