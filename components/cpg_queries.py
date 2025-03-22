@@ -4,6 +4,7 @@ import seaborn as sns
 import polars as pl
 import duckdb
 from util.database import get_tables
+import pandas as pd
 
 # Import the CPG analysis module
 from util import cpg_analysis
@@ -20,11 +21,9 @@ def display_cpg_analysis_queries():
     # Create tabs for different query categories
     query_tabs = st.tabs([
         "Chain Store Analysis", 
-        "Data Completeness", 
         "Territory Coverage",
         "Delivery Windows",
-        "Retail Segments",
-        "Competitive Density"
+        "Retail Segments"
     ])
     
     # Get the current database connection
@@ -52,10 +51,25 @@ def display_cpg_analysis_queries():
         distribution deals. Working with chains allows CPG companies to negotiate single agreements that 
         cover multiple retail locations.
         
-        **Business Value:**
-        - Prioritize sales efforts on chains with the most locations
-        - Identify regional vs. national chain presence
-        - Assess data quality across chain locations
+        **Query Being Executed:**
+        ```sql
+        SELECT 
+            business_name as chain_name,
+            COUNT(*) as location_count,
+            COUNT(DISTINCT postal_code) as postal_codes_covered,
+            COUNT(DISTINCT city) as cities_covered,
+            ROUND(AVG(confidence_score), 2) as avg_confidence
+        FROM locations
+        GROUP BY business_name
+        HAVING COUNT(*) >= {min_locations}
+        ORDER BY location_count DESC;
+        ```
+        
+        **What This Query Does:**
+        - Counts locations per business name
+        - Tracks geographic spread (postal codes and cities)
+        - Calculates average data confidence
+        - Filters for chains with minimum location count
         """)
         
         min_locations = st.slider("Minimum locations per chain:", 2, 20, 3)
@@ -100,93 +114,43 @@ def display_cpg_analysis_queries():
                 except Exception as e:
                     st.error(f"Error running chain store analysis: {str(e)}")
     
-    # Tab 2: Data Completeness Analysis
+    # Tab 2: Territory Coverage Analysis
     with query_tabs[1]:
-        st.markdown("### Data Completeness Analysis")
-        st.markdown("""
-        This analysis assesses the completeness of critical data fields essential for CPG operations.
-        Complete and accurate data is crucial for effective distribution planning and retail execution.
-        
-        **Business Value:**
-        - Identify data quality gaps that could impact operations
-        - Prioritize data collection efforts for critical fields
-        - Track data quality improvements over time
-        """)
-        
-        if st.button("Run Data Completeness Analysis"):
-            with st.spinner("Analyzing data completeness..."):
-                try:
-                    # Run the analysis
-                    completeness = cpg_analysis.assess_critical_data_completeness(conn, selected_table)
-                    
-                    if completeness.empty:
-                        st.info("No data completeness information available.")
-                    else:
-                        # Extract metrics
-                        missing_address_pct = float(completeness['missing_address_pct'].iloc[0])
-                        missing_hours_pct = float(completeness['missing_hours_pct'].iloc[0])
-                        missing_website_pct = float(completeness['missing_website_pct'].iloc[0])
-                        low_confidence_pct = float(completeness['low_confidence_pct'].iloc[0])
-                        
-                        # Display metrics
-                        st.markdown("#### Data Quality Metrics")
-                        col1, col2 = st.columns(2)
-                        
-                        with col1:
-                            st.metric("Missing Addresses", f"{missing_address_pct:.1f}%", 
-                                     delta="-9.3%" if missing_address_pct < 9.3 else None)
-                            st.metric("Missing Hours", f"{missing_hours_pct:.1f}%", 
-                                     delta="-76.7%" if missing_hours_pct < 76.7 else None)
-                        
-                        with col2:
-                            st.metric("Missing Websites", f"{missing_website_pct:.1f}%", 
-                                     delta="-27.2%" if missing_website_pct < 27.2 else None)
-                            st.metric("Low Confidence Records", f"{low_confidence_pct:.1f}%", 
-                                     delta="-37.3%" if low_confidence_pct < 37.3 else None)
-                        
-                        # Visualize data completeness
-                        st.markdown("#### Data Completeness Visualization")
-                        
-                        # Create visualization
-                        fig, ax = plt.subplots(figsize=(10, 6))
-                        categories = ['Addresses', 'Hours', 'Websites', 'High Confidence']
-                        complete_values = [100 - missing_address_pct, 100 - missing_hours_pct, 
-                                          100 - missing_website_pct, 100 - low_confidence_pct]
-                        missing_values = [missing_address_pct, missing_hours_pct, 
-                                         missing_website_pct, low_confidence_pct]
-                        
-                        bar_width = 0.35
-                        index = range(len(categories))
-                        
-                        ax.bar(index, complete_values, bar_width, label='Complete', color='green')
-                        ax.bar(index, missing_values, bar_width, bottom=complete_values, label='Missing', color='red')
-                        
-                        ax.set_xlabel('Data Category')
-                        ax.set_ylabel('Percentage')
-                        ax.set_title('Data Completeness Assessment')
-                        ax.set_xticks(index)
-                        ax.set_xticklabels(categories)
-                        ax.set_ylim(0, 100)
-                        ax.legend()
-                        plt.tight_layout()
-                        
-                        # Display the plot
-                        st.pyplot(fig)
-                        
-                except Exception as e:
-                    st.error(f"Error running data completeness analysis: {str(e)}")
-    
-    # Tab 3: Territory Coverage Analysis
-    with query_tabs[2]:
         st.markdown("### Territory Coverage Analysis")
         st.markdown("""
         This analysis maps retail distribution by city for sales territory planning. It helps identify
         high-density areas for focused sales efforts and areas with limited coverage that may need attention.
         
-        **Business Value:**
-        - Optimize sales territory assignments
-        - Identify expansion opportunities in underserved areas
-        - Balance workload across sales territories
+        **Query Being Executed:**
+        ```sql
+        WITH city_coverage AS (
+            SELECT 
+                city,
+                state,
+                COUNT(*) AS location_count,
+                COUNT(DISTINCT sub_category) AS category_diversity
+            FROM locations
+            WHERE main_category IN ('retail', 'convenience_and_grocery_stores')
+                AND open_closed_status = 'open'
+                AND city IS NOT NULL
+                AND state IS NOT NULL
+            GROUP BY city, state
+        )
+        SELECT 
+            city,
+            state,
+            location_count,
+            category_diversity,
+            ROUND(category_diversity * 1.0 / location_count, 2) AS diversity_ratio
+        FROM city_coverage
+        ORDER BY location_count DESC
+        ```
+        
+        **What This Query Does:**
+        - Groups locations by city and state
+        - Counts total locations per city
+        - Measures category diversity (unique sub-categories)
+        - Calculates diversity ratio (categories per location)
         """)
         
         if st.button("Run Territory Coverage Analysis"):
@@ -208,19 +172,36 @@ def display_cpg_analysis_queries():
                         
                         # Create visualization
                         fig, ax = plt.subplots(figsize=(12, 6))
-                        top_territories = territories.head(10)
                         
-                        # Create a stacked bar chart
-                        ax.bar(top_territories['city'], top_territories['retail_locations'], 
-                              label='Retail', color='skyblue')
-                        ax.bar(top_territories['city'], top_territories['grocery_locations'], 
-                              bottom=top_territories['retail_locations'], label='Grocery', color='orange')
+                        # Convert to polars DataFrame if needed
+                        if not isinstance(territories, pl.DataFrame):
+                            territories = pl.from_pandas(territories)
+                            
+                        # Get top 10 cities by location count
+                        top_territories = territories.sort('location_count', descending=True).head(10).to_pandas()
                         
-                        ax.set_title('Retail and Grocery Distribution by City')
+                        # Create a bar chart with location count and diversity
+                        x = range(len(top_territories))
+                        ax.bar(x, top_territories['location_count'], label='Total Locations', color='skyblue')
+                        ax.set_xticks(x)
+                        ax.set_xticklabels(top_territories['city'], rotation=45, ha='right')
+                        
+                        # Add category diversity as a line
+                        ax2 = ax.twinx()
+                        ax2.plot(x, top_territories['category_diversity'], color='red', marker='o', 
+                                label='Category Diversity', linewidth=2)
+                        
+                        # Set labels and title
                         ax.set_xlabel('City')
                         ax.set_ylabel('Number of Locations')
-                        plt.xticks(rotation=45, ha='right')
-                        ax.legend()
+                        ax2.set_ylabel('Category Diversity')
+                        plt.title('Top Cities: Location Count vs Category Diversity')
+                        
+                        # Add legends
+                        lines1, labels1 = ax.get_legend_handles_labels()
+                        lines2, labels2 = ax2.get_legend_handles_labels()
+                        ax.legend(lines1 + lines2, labels1 + labels2, loc='upper right')
+                        
                         plt.tight_layout()
                         
                         # Display the plot
@@ -228,18 +209,34 @@ def display_cpg_analysis_queries():
                         
                 except Exception as e:
                     st.error(f"Error running territory coverage analysis: {str(e)}")
+                    st.error("Please check if all required columns exist in your data table.")
     
-    # Tab 4: Delivery Windows Analysis
-    with query_tabs[3]:
+    # Tab 3: Delivery Windows Analysis
+    with query_tabs[2]:
         st.markdown("### Delivery Windows Analysis")
         st.markdown("""
         This analysis examines business hours to identify optimal delivery windows for CPG products.
         Efficient delivery scheduling is critical for maximizing store coverage while minimizing logistics costs.
         
-        **Business Value:**
-        - Optimize delivery routes and schedules
-        - Identify stores with extended or limited receiving hours
-        - Plan staffing for delivery operations
+        **Query Being Executed:**
+        ```sql
+        SELECT 
+            business_name,
+            EXTRACT(HOUR FROM opening_time) as open_hour,
+            EXTRACT(HOUR FROM closing_time) as close_hour,
+            (EXTRACT(HOUR FROM closing_time) - EXTRACT(HOUR FROM opening_time)) as window_hours
+        FROM locations
+        WHERE day_of_week = '{selected_day}'
+        AND opening_time IS NOT NULL
+        AND closing_time IS NOT NULL
+        ORDER BY window_hours DESC;
+        ```
+        
+        **What This Query Does:**
+        - Extracts business hours for selected day
+        - Calculates delivery window duration
+        - Identifies optimal delivery times
+        - Flags extended-hours locations
         """)
         
         day_options = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
@@ -286,17 +283,39 @@ def display_cpg_analysis_queries():
                 except Exception as e:
                     st.error(f"Error running delivery windows analysis: {str(e)}")
     
-    # Tab 5: Retail Segments Analysis
-    with query_tabs[4]:
+    # Tab 4: Retail Segments Analysis
+    with query_tabs[3]:
         st.markdown("### Retail Segments Analysis")
         st.markdown("""
         This analysis examines the distribution of retail categories to identify key segments for CPG products.
         Understanding the retail landscape helps target the right channels for specific product types.
         
-        **Business Value:**
-        - Identify primary retail channels for product placement
-        - Discover niche retail segments for specialty products
-        - Track changes in retail composition over time
+        **Query Being Executed:**
+        ```sql
+        WITH retail_categories AS (
+            SELECT 
+                sub_category AS category,
+                COUNT(*) AS location_count
+            FROM locations
+            WHERE main_category IN ('retail', 'convenience_and_grocery_stores')
+                AND open_closed_status = 'open'
+                AND sub_category IS NOT NULL
+                AND sub_category != ''
+            GROUP BY sub_category
+        )
+        SELECT 
+            category,
+            location_count,
+            ROUND(location_count * 100.0 / (SELECT SUM(location_count) FROM retail_categories), 2) AS percentage
+        FROM retail_categories
+        ORDER BY location_count DESC
+        ```
+        
+        **What This Query Does:**
+        - Groups locations by sub-category
+        - Calculates total locations per category
+        - Computes percentage distribution
+        - Filters out invalid categories
         """)
         
         if st.button("Run Retail Segments Analysis"):
@@ -319,9 +338,15 @@ def display_cpg_analysis_queries():
                         # Create visualization
                         fig, ax = plt.subplots(figsize=(10, 6))
                         
+                        # Convert to polars DataFrame if needed
+                        if not isinstance(segments, pl.DataFrame):
+                            segments = pl.from_pandas(segments)
+                            
+                        # Get top segments for visualization
+                        top_segments = segments.head(8).to_pandas()
+                        
                         # Create a pie chart of top segments
-                        top_segments = segments.head(8)
-                        ax.pie(top_segments['location_count'], labels=top_segments['sub_category'], 
+                        ax.pie(top_segments['location_count'], labels=top_segments['category'], 
                               autopct='%1.1f%%', startangle=90)
                         ax.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle
                         ax.set_title('Distribution of Top Retail Segments')
@@ -332,60 +357,4 @@ def display_cpg_analysis_queries():
                         
                 except Exception as e:
                     st.error(f"Error running retail segments analysis: {str(e)}")
-    
-    # Tab 6: Competitive Density Analysis
-    with query_tabs[5]:
-        st.markdown("### Competitive Density Analysis")
-        st.markdown("""
-        This analysis maps retail density by postal code to identify areas of high competitive activity.
-        Understanding competitive density helps optimize distribution and marketing strategies.
-        
-        **Business Value:**
-        - Identify high-opportunity areas for focused distribution
-        - Avoid oversaturated markets with excessive competition
-        - Target marketing efforts in competitive hotspots
-        """)
-        
-        top_n = st.slider("Number of top postal codes to analyze:", 5, 30, 10)
-        
-        if st.button("Run Competitive Density Analysis"):
-            with st.spinner("Analyzing competitive density..."):
-                try:
-                    # Run the analysis
-                    density = cpg_analysis.analyze_competitive_density(conn, selected_table, top_n)
-                    
-                    if density.empty:
-                        st.info("No competitive density information available.")
-                    else:
-                        st.success(f"Analyzed competitive density across {len(density)} postal codes")
-                        
-                        # Display results
-                        st.dataframe(density, use_container_width=True)
-                        
-                        # Visualize competitive density
-                        st.markdown("### Retail Density by Postal Code")
-                        
-                        # Create visualization
-                        fig, ax = plt.subplots(figsize=(12, 6))
-                        
-                        # Convert to polars DataFrame if it's not already
-                        if not isinstance(density, pl.DataFrame):
-                            density = pl.from_pandas(density)
-                        
-                        # Convert to pandas for seaborn
-                        density_pd = density.to_pandas()
-                        
-                        # Use seaborn for visualization
-                        sns.barplot(x='postal_code', y='location_count', data=density_pd, ax=ax)
-                        
-                        ax.set_title('Retail Location Density by Postal Code')
-                        ax.set_xlabel('Postal Code')
-                        ax.set_ylabel('Number of Locations')
-                        plt.xticks(rotation=45, ha='right')
-                        plt.tight_layout()
-                        
-                        # Display the plot
-                        st.pyplot(fig)
-                        
-                except Exception as e:
-                    st.error(f"Error running competitive density analysis: {str(e)}")
+                    st.error("Please check if all required columns exist in your data table.")

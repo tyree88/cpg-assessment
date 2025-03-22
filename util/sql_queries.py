@@ -165,46 +165,12 @@ def get_data_completeness_query(table_name: str) -> str:
     """Get optimized query for data completeness assessment."""
     return f"""
     SELECT 
-        'name' AS field,
-        COUNT(*) AS total_records,
-        COUNT(*) FILTER (WHERE name IS NOT NULL AND name != '') AS complete_records,
-        ROUND(COUNT(*) FILTER (WHERE name IS NOT NULL AND name != '') * 100.0 / COUNT(*), 2) AS completeness_percentage
+        COUNT(*) as total_records,
+        SUM(CASE WHEN address IS NULL OR address = '' THEN 1 ELSE 0 END) as missing_address,
+        SUM(CASE WHEN business_hours IS NULL OR business_hours = '' THEN 1 ELSE 0 END) as missing_hours,
+        SUM(CASE WHEN website IS NULL OR website = '' THEN 1 ELSE 0 END) as missing_website,
+        SUM(CASE WHEN data_quality_confidence_score < 0.7 THEN 1 ELSE 0 END) as low_confidence
     FROM {table_name}
     WHERE {RETAIL_FILTER}
         AND {OPEN_FILTER}
-    
-    UNION ALL
-    
-    SELECT 
-        'address' AS field,
-        COUNT(*) AS total_records,
-        COUNT(*) FILTER (WHERE address IS NOT NULL AND address != '') AS complete_records,
-        ROUND(COUNT(*) FILTER (WHERE address IS NOT NULL AND address != '') * 100.0 / COUNT(*), 2) AS completeness_percentage
-    FROM {table_name}
-    WHERE {RETAIL_FILTER}
-        AND {OPEN_FILTER}
-    
-    UNION ALL
-    
-    SELECT 
-        'phone' AS field,
-        COUNT(*) AS total_records,
-        COUNT(*) FILTER (WHERE phone IS NOT NULL AND phone != '') AS complete_records,
-        ROUND(COUNT(*) FILTER (WHERE phone IS NOT NULL AND phone != '') * 100.0 / COUNT(*), 2) AS completeness_percentage
-    FROM {table_name}
-    WHERE {RETAIL_FILTER}
-        AND {OPEN_FILTER}
-    
-    UNION ALL
-    
-    SELECT 
-        'coordinates' AS field,
-        COUNT(*) AS total_records,
-        COUNT(*) FILTER (WHERE latitude IS NOT NULL AND longitude IS NOT NULL) AS complete_records,
-        ROUND(COUNT(*) FILTER (WHERE latitude IS NOT NULL AND longitude IS NOT NULL) * 100.0 / COUNT(*), 2) AS completeness_percentage
-    FROM {table_name}
-    WHERE {RETAIL_FILTER}
-        AND {OPEN_FILTER}
-    
-    ORDER BY completeness_percentage ASC
     """

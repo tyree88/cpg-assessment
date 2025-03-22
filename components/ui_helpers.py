@@ -65,22 +65,6 @@ def render_no_data_message(component_name: str):
     </div>
     """, unsafe_allow_html=True)
 
-def render_analysis_progress(progress_container):
-    """
-    Render a progress bar for data analysis.
-    
-    Args:
-        progress_container: Streamlit container to render progress in
-    """
-    with progress_container:
-        progress_bar = st.progress(0)
-        with st.spinner("Analyzing your data..."):
-            # Simulate progress for better UX
-            for i in range(100):
-                # Update progress bar
-                progress_bar.progress(i + 1)
-                time.sleep(0.01)
-
 def render_key_metrics(analysis: Dict[str, Any]):
     """
     Render key metrics based on analysis results.
@@ -138,28 +122,60 @@ def render_footer():
 
 def render_welcome_section():
     """Render the welcome section with getting started information."""
-    from components.ui_components import create_info_box
-    
     st.markdown("<h3 class='section-header'>📋 Getting Started</h3>", unsafe_allow_html=True)
-    create_info_box(
-        "Welcome Your CPG Data Quality Assessment Tool!", 
-        """
-        This tool is designed to provide an brief summary of my finding, my proposed method to handle data quality issues at scale and any assumptions on the data.
-        You must Load the data from the duckdb first to get started.
-        This App includes the following sections:
-        1. Overview of my findings and a summary of my proposed method to handle data quality issues at scale.
-        2. Data Overview and Analysis to show the table and some basic analysis.
-        3. Data Cleaning to show the recommendations and reports.
-        4. CPG Queries to show the queries and results.
-        5. Generate recommendations and reports that I would like to transmit to the prospect.
-        """,
-        "info"
-    )
     
-    # Add data loader element below the welcome message with minimal spacing
+    # Quick start guide prominently displayed
+    st.markdown("""
+    ### Quick Start Guide:
+    1. Select your data source from the dropdown menu below
+    2. Click 'Load Data' to begin the analysis
+    3. Navigate through the tabs to explore different aspects of your data
+    4. Generate a final report with findings and recommendations
+    """)
+    
+    
+    # Detailed information in expander
+    with st.expander("ℹ️ Learn More About DataPlor Features"):
+        st.markdown("""
+        DataPlor provides a comprehensive data quality assessment for Consumer Packaged Goods (CPG) point-of-interest and location data. 
+        
+        ### Key Features:
+        
+        #### 1. Data Loading & Overview
+        - Connect to DuckDB and load your data tables
+        - View basic statistics and data summaries
+        - Understand data structure and completeness
+        
+        #### 2. Data Analysis
+        - Detailed column-level analysis
+        - Data type validation and consistency checks
+        - Missing value analysis and pattern detection
+        - Duplicate record identification
+        
+        #### 3. Data Cleaning
+        - Automated cleaning recommendations
+        - Handle missing data and duplicates
+        - Standardize formats and values
+        - Track cleaning operations and their impact
+        
+        #### 4. CPG-Specific Analysis
+        - Business category distribution
+        - Location clustering analysis
+        - Market coverage assessment
+        - Competition analysis
+        
+        #### 5. Report Generation
+        - Comprehensive data quality reports
+        - Issue summaries and recommendations
+        - Export findings and visualizations
+        - Action item prioritization
+        
+        > **Note:** All analysis is performed locally and no data is sent to external servers.
+        """)
+    # Add data loader element with minimal spacing
     st.markdown("<h4 style='margin-top: 0.5rem; margin-bottom: 0.5rem;'>Select Your Data Source</h4>", unsafe_allow_html=True)
     
-    # Render data source selector
+        # Render data source selector
     selected_table, use_sample, load_clicked = render_data_source_selector()
     
     return selected_table, use_sample, load_clicked

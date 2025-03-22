@@ -7,6 +7,7 @@ This file has been refactored to use smaller, reusable components for better mai
 
 import streamlit as st
 import time
+from typing import Dict
 
 # Import utility modules
 from util.analysis import analyze_data
@@ -21,7 +22,6 @@ from components.ui_components import create_progress_steps, create_info_box
 from components.cpg_queries import display_cpg_analysis_queries
 from components.ui_helpers import (
     render_no_data_message, 
-    render_analysis_progress, 
     render_key_metrics, 
     render_footer,
     render_welcome_section
@@ -72,47 +72,236 @@ def render_overview():
     """Render the main overview page with key findings and getting started information."""
     st.markdown('<h2 class="sub-header">CPG Data Quality Assessment Overview</h2>', unsafe_allow_html=True)
     
+    # Executive Summary Section
+    st.markdown("### 📊 Executive Summary")
     st.markdown("""
-    This application provides a comprehensive data quality assessment for CPG Client's point-of-interest (POI) 
-    and location data. The assessment identifies data quality issues and provides actionable recommendations for improvement.
+    This report presents a comprehensive assessment of data quality for the point-of-interest (POI) and location data 
+    stored in the client's database. The assessment reveals several critical data quality issues that require attention 
+    to improve business decision-making and operational efficiency.
+
+    The client's database contains **37,790 records** of business location data primarily in Idaho, with comprehensive 
+    information covering business identifiers, categorization, location information, contact details, operational data, 
+    and quality metrics.
     """)
     
-    # Key Findings Section
-    st.markdown("### Key Findings")
-    st.markdown("Our analysis of 37,790 location records revealed several critical data quality issues:")
+    # Key Findings Section using columns
+    st.markdown("### 🔍 Key Data Quality Issues")
     
     col1, col2 = st.columns(2)
     
     with col1:
+        # Data Completeness Issues
         with st.container():
-            st.markdown('<p class="critical-issue"><strong>Data Completeness Gaps:</strong></p>', unsafe_allow_html=True)
+            st.markdown('<p class="critical-issue"><strong>Data Completeness Issues</strong></p>', unsafe_allow_html=True)
             st.markdown("""
-            - 9.3% of records missing address data
+            - 9.3% missing address data
             - 27.2% missing website information
-            - Up to 76.7% missing operational hours (particularly on weekends)
+            - 38.3% missing Monday business hours
+            - Up to 76.7% missing Sunday business hours
             """)
-            
+        
+        # Duplicate Records
         with st.container():
-            st.markdown('<p class="warning-issue"><strong>Duplicate Records:</strong></p>', unsafe_allow_html=True)
+            st.markdown('<p class="warning-issue"><strong>Duplicate Records</strong></p>', unsafe_allow_html=True)
             st.markdown("""
-            - 132 potential duplicate business locations identified
-            - Examples include "Silvercreek Realty Group" (5 duplicates) and "Americana Terrace" (4 duplicates)
+            - 132 potential duplicate locations identified
+            - Notable examples:
+              - "Silvercreek Realty Group" (5 instances)
+              - "Americana Terrace" (4 instances)
+            """)
+        
+        # Data Confidence
+        with st.container():
+            st.markdown('<p class="warning-issue"><strong>Data Confidence Concerns</strong></p>', unsafe_allow_html=True)
+            st.markdown("""
+            - 37.3% of records have low confidence scores (below 0.7)
+            - Only 5.7% have high confidence scores (above 0.9)
+            - Average confidence score: 0.745
             """)
     
     with col2:
+        # Category Issues
         with st.container():
-            st.markdown('<p class="warning-issue"><strong>Data Confidence Issues:</strong></p>', unsafe_allow_html=True)
+            st.markdown('<p class="critical-issue"><strong>Category Inconsistencies</strong></p>', unsafe_allow_html=True)
             st.markdown("""
-            - 37.3% of records have low confidence scores (below 0.7)
-            - Average confidence score across all records: 0.745
+            - Potential misalignments in category hierarchies
+            - Subcategories used incorrectly across main categories
+            - Limited distinct full hierarchies despite many categories
             """)
-            
+        
+        # Format Issues
         with st.container():
-            st.markdown('<p class="critical-issue"><strong>Format Standardization Issues:</strong></p>', unsafe_allow_html=True)
+            st.markdown('<p class="warning-issue"><strong>Format Standardization Issues</strong></p>', unsafe_allow_html=True)
             st.markdown("""
-            - Multiple postal code formats (5-digit, 9-digit, and non-standard)
-            - Character encoding problems in some business names
+            Postal code format inconsistencies:
+            - 36,949 records: 5-digit format
+            - 521 records: 9-digit format
+            - 79 records: non-standard lengths
             """)
+    
+    # Business Impact Section
+    st.markdown("### 💼 Business Impact")
+    st.markdown("""
+    Missing operational data (hours, websites) directly impacts customer experience and engagement. 
+    Incomplete address information limits the utility of location-based analytics. Additionally:
+    - Duplicates inflate location counts
+    - Skewed market analysis
+    - Customer confusion through inconsistent information
+    """)
+    
+    # Business Operations Impact
+    st.markdown("#### Critical Impact on CPG Operations")
+    impact_col1, impact_col2 = st.columns(2)
+    
+    with impact_col1:
+        st.markdown("""
+        These issues directly affect the ability to:
+        - Target retail distribution points
+        - Plan delivery routes and schedules
+        - Analyze competitive market landscapes
+        """)
+    
+    with impact_col2:
+        st.markdown("""
+        Additional operational impacts:
+        - Manage sales territories
+        - Design consumer marketing campaigns
+        - Optimize supply chain operations
+        """)
+    
+    # Scalable Data Management Section
+    st.markdown("### 🔄 Scalable Data Quality Management Framework")
+    st.markdown("""
+    The proposed framework for scalable data quality management features a three-layer architecture: Ingestion, Cleaning, and Distribution.
+
+    It uses Airbyte for automated data collection, initially storing data in DuckDB before transitioning to ClickHouse for larger-scale analytics. Continuous data quality monitoring is handled by Soda, while Prefect manages the workflow with event orchestration and alerts. For data transformation, dbt is utilized, connected to Databricks for advanced analytics.
+
+    The system operates on a hybrid cloud architecture using Google Kubernetes Engine, supporting scalability and consistent data quality, with capabilities for automated validation, real-time monitoring, and machine learning
+    """)
+    
+    scale_col1, scale_col2, scale_col3 = st.columns(3)
+    
+    with scale_col1:
+        st.markdown("""
+        #### 🔍 Automated Validation Pipeline
+        
+        **Data Ingestion & Validation:**
+        - Input validation at collection points using Airbye
+        - Initial storage in DuckDB (POC phase)
+        - Migration to ClickHouse for scaled analytics
+        - Soda integration for quality monitoring
+        
+        **Pipeline Orchestration:**
+        - Prefect for event orchestration
+        - Real-time quality checks
+        - Automated alerting system
+        - Clear visibility dashboards
+        """)
+    
+    with scale_col2:
+        st.markdown("""
+        #### 📊 Model Analysis & Development
+        
+        **Data Transformation:**
+        - dbt for model development
+        - Version-controlled transformations
+        - Automated testing suite
+        
+        **Advanced Analytics:**
+        - Databricks integration
+        - Scalable computation
+        - Machine learning capabilities
+        - Automated model retraining
+        """)
+    
+    with scale_col3:
+        st.markdown("""
+        #### 🚀 Scalable Architecture
+        
+        **Infrastructure:**
+        - Hybrid cloud distributed system
+        - GKE for model deployment
+        - Auto-scaling capabilities
+        
+        **Data Flow:**
+        - Streaming data processing
+        - Batch processing for historical data
+        - Real-time quality monitoring
+        - Automated recovery procedures
+        """)
+    
+    # Architecture Diagram
+    st.markdown("#### System Architecture Overview")
+    
+    # Add Miro board link
+    st.markdown("""
+    > 🔗 [View interactive architecture diagram in Miro](https://miro.com/app/board/uXjVIMv-I3g=/?share_link_id=895951754429)
+    """)
+    
+    # Create columns for better layout
+    img_col1, img_col2 = st.columns([2, 1])
+    
+    with img_col1:
+        # Add the detailed architecture image
+        st.image("assets/architecture_diagram.jpg", 
+                caption="Data Quality Pipeline Architecture",
+                use_container_width=True)
+    
+    with img_col2:
+        st.markdown("""
+        #### Key Components:
+        
+        🔄 **Data Flow**
+        - Data ingestion via Airbyte
+        - Quality validation with Soda
+        - Transformation using dbt
+        
+        🛠️ **Tools**
+        - DuckDB/ClickHouse for storage
+        - Prefect for orchestration
+        - Databricks for analytics
+        
+        ☁️ **Infrastructure**
+        - GKE for deployment
+        - Hybrid cloud setup
+        - Auto-scaling enabled
+        """)
+    # Implementation Notes
+    with st.expander("📝 Implementation Notes"):
+        st.markdown("""
+        **Phase 1: Foundation**
+        - Set up DuckDB for initial data storage
+        - Implement basic Airbye validation
+        - Configure Prefect workflows
+        
+        **Phase 2: Scaling**
+        - Migrate to ClickHouse for larger datasets
+        - Integrate Soda for comprehensive monitoring
+        - Implement dbt models
+        
+        **Phase 3: Enterprise**
+        - Deploy on GKE
+        - Integrate with Databricks
+        - Implement full automation
+        
+        > **Note:** This architecture ensures scalability from thousands to millions of records while maintaining data quality standards.
+        """)
+    
+    # Recommendations Section
+    st.markdown("### 📋 Next Steps")
+    st.markdown("""
+    1. Review the **Data Analysis** tab for detailed insights into each issue
+    2. Use the **Data Cleaning** tab to address identified problems
+    3. Explore **CPG Queries** tab for industry-specific analysis
+    4. Generate a comprehensive report in the **Report** tab
+    """)
+    
+    # Data Privacy Note
+    st.markdown("""
+    ---
+    > **Note:** All analysis is performed locally on your data. No information is sent to external servers.
+    """)
+
 
 
 def render_data_analysis_tab():
@@ -122,23 +311,17 @@ def render_data_analysis_tab():
         render_no_data_message("analysis")
         return
     
-    # Progress steps are only shown after the success message when data is loaded
-    
-    # Progress indicator
-    progress_container = st.container()
-    
     # If analysis hasn't been run yet, do it now
     if st.session_state.analysis is None:
-        render_analysis_progress(progress_container)
-        
-        # Actual analysis
-        st.session_state.analysis = analyze_data(st.session_state.df, st.session_state.table_name)
-        st.session_state.issues = identify_data_quality_issues(st.session_state.df, st.session_state.analysis, st.session_state.table_name)
+        with st.spinner("Analyzing your data..."):
+            # Actual analysis
+            st.session_state.analysis = analyze_data(st.session_state.df, st.session_state.table_name)
+            st.session_state.issues = identify_data_quality_issues(st.session_state.df, st.session_state.analysis, st.session_state.table_name)
         
         # Mark this step as completed
         st.session_state.completed_steps.add('analysis')
-        st.session_state.active_step = 2  # Keep at 2 since we still want to move to the second step
-    
+        st.session_state.active_step = 2
+
     # Show a success message if analysis is complete
     if 'analysis' in st.session_state.completed_steps:
         create_info_box("Analysis Complete", "Explore the results below.", "success")
@@ -150,11 +333,11 @@ def render_data_analysis_tab():
     # Create a more intuitive tabbed interface with icons
     analysis_tabs = st.tabs(["📊 Data Overview", "📋 Column Analysis"])
     
-    # Display data overview
-    display_data_overview(analysis_tabs)
-    
-    # Display column analysis
-    display_column_analysis(analysis_tabs)
+    # Display data overview and column analysis with spinners
+    with st.spinner("Loading data overview..."):
+        display_data_overview(analysis_tabs)
+    with st.spinner("Analyzing columns..."):
+        display_column_analysis(analysis_tabs)
 
 
 def render_data_cleaning_tab():
@@ -172,12 +355,13 @@ def render_data_cleaning_tab():
     
     if st.session_state.issues is None:
         # Run analysis if not already done
-        with st.spinner("Analyzing data..."):
+        with st.spinner("Cleaning your data..."):
             st.session_state.analysis = analyze_data(st.session_state.df, st.session_state.table_name)
             st.session_state.issues = identify_data_quality_issues(st.session_state.df, st.session_state.analysis, st.session_state.table_name)
     
-    # Generate cleaning recommendations
-    recommendations = generate_cleaning_recommendations(st.session_state.df, st.session_state.issues, st.session_state.analysis)
+    # Generate cleaning recommendations with spinner
+    with st.spinner("Generating cleaning recommendations..."):
+        recommendations = generate_cleaning_recommendations(st.session_state.df, st.session_state.issues, st.session_state.analysis)
     
     # Create tabs for different cleaning operations
     cleaning_tabs = st.tabs(["Recommendations", "Data Completeness", "Deduplication"])
@@ -186,34 +370,37 @@ def render_data_cleaning_tab():
         st.markdown("**Cleaning Recommendations**")
         st.markdown("Based on the analysis, the following cleaning operations are recommended:")
         
-        # Display recommendations
-        for i, rec in enumerate(recommendations):
-            with st.expander(f"{i+1}. {rec.get('title', 'Recommendation')}"):
-                st.markdown(f"**Issue**: {rec.get('issue', '')}")
-                st.markdown(f"**Impact**: {rec.get('impact', '')}")
-                
-                st.markdown("**Recommended Actions:**")
-                for action in rec.get('actions', []):
-                    st.markdown(f"- {action}")
-                
-                # Add "Apply This Fix" button for each recommendation if applicable
-                if 'auto_fix' in rec and rec['auto_fix']:
-                    if st.button("Apply This Fix", key=f"fix_{i}"):
-                        cleaning_step = rec.get('cleaning_step', {})
-                        if cleaning_step:
-                            with st.spinner("Applying fix..."):
-                                cleaned_df = clean_data(st.session_state.df, st.session_state.table_name, [cleaning_step])
-                                if cleaned_df is not None:
-                                    st.session_state.df = cleaned_df
-                                    st.success("Fix applied successfully!")
-                                    # Update analysis after cleaning
-                                    st.session_state.analysis = analyze_data(st.session_state.df, st.session_state.table_name)
-                                    st.session_state.issues = identify_data_quality_issues(st.session_state.df, st.session_state.analysis, st.session_state.table_name)
-                                    st.experimental_rerun()
+        # Display recommendations with spinner
+        with st.spinner("Loading recommendations..."):
+            for i, rec in enumerate(recommendations):
+                with st.expander(f"{i+1}. {rec.get('title', 'Recommendation')}"):
+                    st.markdown(f"**Issue**: {rec.get('issue', '')}")
+                    st.markdown(f"**Impact**: {rec.get('impact', '')}")
+                    
+                    st.markdown("**Recommended Actions:**")
+                    for action in rec.get('actions', []):
+                        st.markdown(f"- {action}")
+                    
+                    # Add "Apply This Fix" button for each recommendation if applicable
+                    if 'auto_fix' in rec and rec['auto_fix']:
+                        if st.button("Apply This Fix", key=f"fix_{i}"):
+                            cleaning_step = rec.get('cleaning_step', {})
+                            if cleaning_step:
+                                with st.spinner("Applying fix..."):
+                                    cleaned_df = clean_data(st.session_state.df, st.session_state.table_name, [cleaning_step])
+                                    if cleaned_df is not None:
+                                        st.session_state.df = cleaned_df
+                                        st.success("Fix applied successfully!")
+                                        # Update analysis after cleaning
+                                        st.session_state.analysis = analyze_data(st.session_state.df, st.session_state.table_name)
+                                        st.session_state.issues = identify_data_quality_issues(st.session_state.df, st.session_state.analysis, st.session_state.table_name)
+                                        st.experimental_rerun()
     
-    display_basic_cleaning_options(cleaning_tabs)
-    display_data_completeness_options(cleaning_tabs)
-    display_deduplication_options(cleaning_tabs)
+    # Display cleaning options with spinners
+    with st.spinner("Loading cleaning options..."):
+        display_basic_cleaning_options(cleaning_tabs)
+        display_data_completeness_options(cleaning_tabs)
+        display_deduplication_options(cleaning_tabs)
 
 
 def render_report_tab():
@@ -225,8 +412,9 @@ def render_report_tab():
         render_no_data_message("report generation")
         return
     
-    # Render the data quality report
-    render_data_quality_report()
+    # Render the data quality report with spinner
+    with st.spinner("Generating report..."):
+        render_data_quality_report()
 
 
 def render_cpg_analysis_tab():
@@ -236,14 +424,14 @@ def render_cpg_analysis_tab():
         render_no_data_message("CPG analysis")
         return
     
-    # Tab 2: CPG Analysis Queries
-    display_cpg_analysis_queries()
+    # Tab 2: CPG Analysis Queries with spinner
+    with st.spinner("Building queries..."):
+        display_cpg_analysis_queries()
 
 
 def toggle_advanced_options():
     """Toggle the visibility of advanced options."""
     st.session_state.show_advanced_options = not st.session_state.show_advanced_options
-
 
 
 def main():

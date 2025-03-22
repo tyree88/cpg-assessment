@@ -1,218 +1,284 @@
-# DataPlor - Data Quality Assessment & Cleaning Tool
+# DataPlor - Data Quality Assessment Tool
 
-A comprehensive data analysis and cleaning tool built for point-of-interest (POI) data, company location data, and metrics stored in DuckDB. This tool provides an interactive interface for analyzing data quality, identifying issues, and cleaning data with a focus on CPG (Consumer Packaged Goods) client data.
+A comprehensive data quality assessment tool designed for analyzing point-of-interest (POI) and location data. Built with Streamlit and DuckDB, this tool provides an interactive interface for data analysis, quality assessment, and cleaning, with specific features for CPG (Consumer Packaged Goods) data.
 
-## Features
+## 🚀 Quick Start
 
-### Core Functionality
-
-- **Data Loading**: Load data from DuckDB tables for analysis
-- **Data Analysis**: Comprehensive data profiling including missing values, data types, and quality metrics
-- **Data Quality Assessment**: Automatic identification of data quality issues
-- **Data Cleaning**: Interactive interface for cleaning data
-- **CPG Analysis**: Specialized tools for CPG data analysis and quality metrics
-
-### Data Quality Assessment
-
-The application automatically identifies issues such as:
-
-- Missing values in critical fields
-- Duplicate records
-- Inconsistent data types
-- Outliers
-- Data quality confidence scores
-- Chain store data consistency
-
-### Data Cleaning Capabilities
-
-Interactive interface for cleaning data with options for:
-
-- Handling missing values (mean, median, mode, custom value)
-- Removing duplicates based on configurable criteria
-- Converting data types
-- Handling outliers
-- Basic data transformations
-
-### CPG-Specific Analysis
-
-- Distribution quality metrics
-- Chain store analysis
-- Geographic coverage assessment
-- Territory management insights
-- Competitive density analysis
-- Delivery window optimization
-
-## Installation
-
-1. Clone this repository
+1. Clone the repository
 2. Install dependencies:
-
 ```bash
 pip install -r requirements.txt
 ```
-
-## Usage
-
-Run the Streamlit app:
-
+3. Run the application:
 ```bash
 streamlit run Home.py
 ```
 
-The application will open in your default web browser with the following tabs:
+## 📁 Project Structure
 
-1. **Overview**: Get started with the application
-2. **Data Analysis**: View comprehensive data analysis and quality metrics
-3. **Data Cleaning**: Apply data cleaning operations based on recommendations
-4. **CPG Analysis**: Access specialized CPG data quality metrics and analysis queries
-5. **Report**: Generate and view data quality reports
-
-## Data Flow
-
-1. Data is loaded from DuckDB tables
-2. The data is analyzed for quality issues
-3. Cleaning recommendations are generated based on identified issues
-4. User selects cleaning operations to perform
-5. Cleaned data is saved back to DuckDB
-6. CPG-specific analyses can be performed on the cleaned data
-
-## Requirements
-
-- Python 3.9+
-- Streamlit 1.24.0+
-- pandas 1.5.0+
-- DuckDB 0.8.0+
-- numpy 1.23.0+
-- matplotlib 3.6.0+
-- seaborn 0.12.0+
-
-## Future Improvements
-
-### User Interface Enhancements
-
-- Add dark mode support
-- Implement responsive design for mobile devices
-- Create custom visualization components for CPG-specific metrics
-- Add user authentication and role-based access control
-
-### Data Processing Capabilities
-
-- Implement machine learning-based data quality scoring
-- Add support for geospatial data visualization and analysis
-- Develop automated data quality monitoring with alerts
-- Create a scheduling system for periodic data quality checks
-
-### Integration Opportunities
-
-- Connect with external data sources for enrichment
-- Implement API endpoints for programmatic access
-- Add export functionality to various formats (CSV, Excel, JSON)
-- Integrate with data catalogs and metadata repositories
-
-### Architecture Improvements
-
-- Containerize the application with Docker
-- Implement a microservices architecture for scalability
-- Add support for distributed processing of large datasets
-- Create a plugin system for custom data quality rules
-
-### Prefect Workflow Integration
-
-#### Architecture Design
-
-The Prefect integration follows a data-centric architecture where the data loading component serves as the central flow, with all other functionality connected as tasks within this flow:
-
-```ascii
-Data Loading Flow
-    ├── Data Quality Assessment Tasks
-    │   ├── Analyze Data
-    │   └── Identify Issues
-    ├── Data Cleaning Tasks
-    │   ├── Generate Recommendations
-    │   └── Apply Cleaning Operations
-    └── CPG Analysis Tasks
-        ├── Chain Store Analysis
-        ├── Territory Coverage
-        └── Retail Segment Analysis
+```
+dataplor/
+├── Home.py                 # Main application entry point
+├── components/            # UI Components
+│   ├── data_analysis.py   # Data analysis components
+│   ├── data_cleaning.py   # Data cleaning interface
+│   ├── data_report.py     # Report generation
+│   ├── ui_helpers.py      # Reusable UI utilities
+│   ├── ui_components.py   # Common UI elements
+│   └── cpg_queries.py     # CPG-specific analysis
+├── util/                 # Utility Functions
+│   ├── analysis.py        # Core analysis logic
+│   ├── cleaning.py        # Data cleaning operations
+│   ├── database.py        # DuckDB connection handling
+│   └── styles.py          # Custom CSS styles
+└── static/              # Static Assets
+    └── architecture.jpg   # System architecture diagram
 ```
 
-This architecture provides several benefits:
+## 🎯 Core Features
 
-- **Single Source of Truth**: The data loading component controls all data access, ensuring consistency
-- **Clear Dependencies**: All tasks depend on the data loading flow, creating a clear execution path
-- **Simplified Orchestration**: Prefect manages task dependencies and execution order automatically
-- **Improved Observability**: Centralized flow makes it easier to monitor the entire data pipeline
-- **Scalability**: Tasks can be executed in parallel where dependencies allow
+### 1. Data Analysis
+- Load and analyze data from DuckDB
+- Comprehensive data profiling
+- Quality metrics calculation
+- Missing value analysis
+- Duplicate detection
 
-#### Planned Enhancements
+### 2. Data Cleaning
+- Automated cleaning recommendations
+- Missing value handling
+- Duplicate record resolution
+- Format standardization
+- Data validation
 
-- Separate UI from processing logic for better maintainability
-- Add scheduling capabilities for regular data quality checks
-- Implement notification systems for data quality alerts
-- Add caching for performance optimization of expensive operations
-- Implement retries for resilient data operations
-- Create deployment pipelines for new models and analysis methods
+### 3. CPG-Specific Features
+- Business category analysis
+- Location clustering
+- Market coverage assessment
+- Territory analysis
 
-## How dbt Improves Data Quality for the CPG Client
+## 🔍 Key Components
 
-The dbt models I outlined provide a systematic approach to improving data quality for your CPG client. Here's a high-level overview of how these transformations address the specific issues identified in your assessment:
+### Home.py
+The main application file that:
+- Initializes the Streamlit interface
+- Manages application state
+- Coordinates component interactions
+- Handles data loading and processing
 
-### 1. Addressing Data Completeness
+### Components
+- `data_analysis.py`: Data profiling and analysis visualizations
+- `data_cleaning.py`: Interactive cleaning interface
+- `data_report.py`: Report generation functionality
+- `ui_helpers.py`: Common UI utilities
+- `cpg_queries.py`: CPG-specific analysis tools
 
-The models systematically identify and track missing data across critical business attributes. By creating transparent metrics through the `data_quality_metrics` model, you gain visibility into exactly where the gaps are (9.3% missing address data, 27.2% missing website information, etc.). This allows you to prioritize data collection efforts and measure improvements over time.
+### Utilities
+- `analysis.py`: Core data analysis functions
+- `cleaning.py`: Data cleaning operations
+- `database.py`: Database connection management
+- `styles.py`: Custom styling definitions
 
-### 2. Eliminating Duplicate Records
+## 💡 Usage Guide
 
-The `int_deduplicated_locations` model implements a sophisticated deduplication strategy that:
+1. **Data Loading**
+   - Select your data source from the dropdown
+   - Click "Load Data" to begin analysis
 
-- Identifies the 132 potential duplicates using business rules
-- Preserves the highest-quality record from each duplicate set
-- Maintains a record of which entities were duplicates
-- Prevents duplicate data from skewing analytics and business decisions
+2. **Data Analysis**
+   - View data quality metrics
+   - Explore column-level statistics
+   - Identify quality issues
 
-### 3. Improving Data Confidence
+3. **Data Cleaning**
+   - Review cleaning recommendations
+   - Apply automated fixes
+   - Validate results
 
-The standardization models systematically improve the overall confidence scores by:
+4. **CPG Analysis**
+   - Analyze business categories
+   - Assess market coverage
+   - Generate insights
 
-- Applying consistent formatting rules to addresses, postal codes, and other fields
-- Normalizing category hierarchies to ensure consistent classification
-- Standardizing business hours formats for better operational analysis
-- Tracking confidence score distributions to identify problematic data segments
+5. **Report Generation**
+   - Create comprehensive reports
+   - Export findings
+   - Track improvements
 
-### 4. Filling Operational Data Gaps
+## 🛠 Development
 
-The `operational_data_analysis` model specifically addresses the significant missing hours data (38.3% missing Monday hours, 76.7% missing Sunday hours) by:
+### Adding New Features
+1. Create component in appropriate directory
+2. Update Home.py to include new component
+3. Add any required utility functions
+4. Update documentation
 
-- Tracking completeness by business category and day of week
-- Identifying patterns in missing data to target collection efforts
-- Providing visibility into operational data quality by retail segment
+### Styling Guidelines
+- Use Streamlit components for consistency
+- Follow existing naming conventions
+- Include docstrings and comments
+- Add type hints for better maintainability
 
-### 5. Resolving Category Inconsistencies
+## 📊 Data Quality Framework
 
-The `category_consistency` model tackles the misalignment between industry codes and business categories by:
+The application implements a three-layer architecture:
+1. **Ingestion**: Data loading and validation
+2. **Processing**: Analysis and cleaning
+3. **Distribution**: Reporting and exports
 
-- Identifying uncommon or potentially incorrect category combinations
-- Establishing valid hierarchy relationships between main and sub-categories
-- Creating tests to enforce category taxonomy rules
-- Providing documentation of the expected category relationships
+## 📈 Key Queries & Analysis
 
-### 6. Enabling Ongoing Quality Monitoring
+### Data Quality Assessment
+```sql
+-- Example of completeness check
+SELECT 
+    column_name,
+    COUNT(*) as total_records,
+    COUNT(*) - COUNT(column_name) as missing_count,
+    ROUND(100.0 * (COUNT(*) - COUNT(column_name)) / COUNT(*), 2) as missing_percentage
+FROM your_table
+GROUP BY column_name;
+```
+Analyzes data completeness, identifying missing values and their distribution across different fields.
 
-Perhaps most importantly, these models create a sustainable framework for ongoing data governance by:
+### Duplicate Detection
+```sql
+-- Example of duplicate detection
+WITH duplicates AS (
+    SELECT 
+        business_name,
+        address,
+        COUNT(*) as occurrence_count
+    FROM locations
+    GROUP BY business_name, address
+    HAVING COUNT(*) > 1
+)
+```
+Identifies potential duplicate records based on business rules and similarity metrics.
 
-- Implementing automated tests that run with each data refresh
-- Tracking quality metrics over time to identify degradation
-- Establishing clear data standards through documentation
-- Creating a foundation for dashboard-based quality monitoring
+### Business Category Analysis
+```sql
+-- Example of category distribution
+SELECT 
+    category,
+    COUNT(*) as location_count,
+    COUNT(DISTINCT parent_category) as parent_categories
+FROM business_categories
+GROUP BY category
+ORDER BY location_count DESC;
+```
+Analyzes the distribution and hierarchy of business categories.
 
-### 7. Business Impact
+### Market Coverage
+```sql
+-- Example of geographic coverage
+SELECT 
+    postal_code,
+    COUNT(*) as location_count,
+    COUNT(DISTINCT category) as category_diversity
+FROM locations
+GROUP BY postal_code;
+```
+Assesses market penetration and coverage across different geographic areas.
 
-The ultimate value of these dbt models is that they transform raw, inconsistent data into a reliable foundation for business decisions by:
+### Data Confidence Scoring
+```sql
+-- Example of confidence scoring
+SELECT 
+    CASE 
+        WHEN confidence_score >= 0.9 THEN 'High'
+        WHEN confidence_score >= 0.7 THEN 'Medium'
+        ELSE 'Low'
+    END as confidence_level,
+    COUNT(*) as record_count
+FROM locations
+GROUP BY confidence_level;
+```
+Evaluates data quality confidence scores and their distribution.
 
-- Increasing confidence in market analysis through more accurate store counts
-- Improving operational efficiency with standardized hours data
-- Enabling more precise targeting of high-value retail locations
-- Creating consistent category hierarchies for better segment analysis
-- Establishing a single source of truth for location data
+### Operational Analysis
+```sql
+-- Example of hours coverage
+SELECT 
+    day_of_week,
+    COUNT(*) as total_locations,
+    COUNT(opening_hours) as hours_available,
+    ROUND(100.0 * COUNT(opening_hours) / COUNT(*), 2) as completion_rate
+FROM operational_hours
+GROUP BY day_of_week;
+```
+Analyzes operational data completeness and patterns.
 
-This structured, code-based approach means that data quality improvements are automated, reproducible, and transparent—ensuring that the CPG client can make business decisions based on data they can trust.
+### Chain Store Analysis
+```sql
+-- Example of chain identification
+SELECT 
+    business_name,
+    COUNT(*) as location_count,
+    COUNT(DISTINCT postal_code) as postal_codes_covered
+FROM locations
+GROUP BY business_name
+HAVING COUNT(*) >= 5;
+```
+Identifies and analyzes chain store patterns and distribution.
+
+### Data Standardization Checks
+```sql
+-- Example of format consistency
+SELECT 
+    postal_code_format,
+    COUNT(*) as occurrence_count
+FROM (
+    SELECT CASE 
+        WHEN postal_code ~ '^\d{5}$' THEN '5-digit'
+        WHEN postal_code ~ '^\d{5}-\d{4}$' THEN '9-digit'
+        ELSE 'other'
+    END as postal_code_format
+    FROM locations
+)
+GROUP BY postal_code_format;
+```
+Validates data format consistency and standardization.
+
+Each query type serves specific analytical purposes:
+
+1. **Quality Assessment**
+   - Completeness analysis
+   - Format validation
+   - Consistency checks
+   - Data type verification
+
+2. **Business Intelligence**
+   - Chain store identification
+   - Market coverage analysis
+   - Category distribution
+   - Operational patterns
+
+3. **Data Cleaning**
+   - Duplicate detection
+   - Format standardization
+   - Missing value identification
+   - Anomaly detection
+
+4. **Operational Insights**
+   - Hours coverage
+   - Geographic distribution
+   - Category relationships
+   - Chain store patterns
+
+These queries form the foundation of the data quality assessment and provide actionable insights for data improvement.
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request
+
+## 📝 License
+
+[MIT License](LICENSE)
+
+## 🆘 Support
+
+For issues and questions, please [create an issue](https://github.com/yourusername/dataplor/issues) in the repository.
