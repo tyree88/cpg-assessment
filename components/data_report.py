@@ -54,7 +54,6 @@ def render_data_quality_report():
                 st.markdown(f"- **{issue.get('type', '')}**: {issue.get('description', '')}")
         
         # Recommendations
-        st.markdown("### Recommendations")
         recommendations = generate_cleaning_recommendations(st.session_state.df, st.session_state.issues, st.session_state.table_name)
         
         for rec in recommendations:
