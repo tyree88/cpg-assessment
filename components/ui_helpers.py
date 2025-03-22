@@ -124,7 +124,7 @@ def render_welcome_section():
     st.markdown("<h2 class='section-header'>📋 Getting Started</h2>", unsafe_allow_html=True)
     
     # Warning about known issues
-    st.warning("⚠️ **Known Issue**: When you run a query it will take you back to the home tab.. Continue back to the query tab to continue analysis! This is issue still being ironed out")
+    st.warning("""⚠️ **Known Issue**: When you run a query it will take you back to the home tab. T his is issue still being ironed out""")
     
     # Quick start guide prominently displayed
     st.markdown("""

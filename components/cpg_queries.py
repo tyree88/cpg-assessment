@@ -13,6 +13,8 @@ def display_cpg_analysis_queries():
     """Display CPG analysis queries in a tabbed interface with explanations."""
     
     st.markdown("## CPG Data Analysis Queries")
+    st.warning("""⚠️ **Known Issue**: When you run a query it will take you back to the home tab. 
+               Continue back to the query tab to continue analysis! This is issue still being ironed out""")
     st.markdown("""
     This section provides specialized queries and analyses for Consumer Packaged Goods (CPG) data.
     Each query focuses on a specific aspect of CPG business operations and market analysis.
