@@ -20,6 +20,7 @@ from components.data_report import render_data_quality_report
 from components.ui_components import create_progress_steps, create_info_box
 from components.cpg_queries import display_cpg_analysis_queries
 from components.overview import render_overview
+from prefect import flow, task
 from components.ui_helpers import (
     render_no_data_message, 
     render_key_metrics, 
@@ -27,7 +28,7 @@ from components.ui_helpers import (
     render_welcome_section
 )
 
-
+@task(name="Setup Page")
 def setup_page():
     """Configure the Streamlit page settings and apply custom CSS."""
     st.set_page_config(
@@ -39,7 +40,7 @@ def setup_page():
     # Apply all styles from the styles module
     apply_all_styles()
 
-
+@task(name="Initialize Session State")
 def initialize_session_state():
     """Initialize session state variables if they don't exist."""
     # Data state variables
@@ -62,12 +63,12 @@ def initialize_session_state():
     if 'last_interaction' not in st.session_state:
         st.session_state.last_interaction = time.time()
 
-
+@task(name="Display App Header")
 def display_app_header():
     """Display the application header and title."""
     st.markdown('<h1 class="main-header">DataPlor - CPG Data Quality Assessment</h1>', unsafe_allow_html=True)
 
-
+@task(name="Render Data Analysis Tab")
 def render_data_analysis_tab():
     """Render the Data Analysis tab with data loading and analysis sections."""
     # Check if data has been loaded
@@ -89,7 +90,7 @@ def render_data_analysis_tab():
     with st.spinner("Loading data overview..."):
         display_data_overview(analysis_tabs)
 
-
+@task(name="Render Data Cleaning Tab")
 def render_data_cleaning_tab():
     """Render the Data Cleaning tab with recommendations."""    
     # Check if data has been loaded
@@ -120,7 +121,7 @@ def render_data_cleaning_tab():
                 for action in rec.get('actions', []):
                     st.markdown(f"- {action}")
 
-
+@task(name="Render Report Tab")
 def render_report_tab():
     """Render the Report tab with data quality report and export options."""
     
@@ -133,7 +134,7 @@ def render_report_tab():
     with st.spinner("Generating report..."):
         render_data_quality_report()
 
-
+@task(name="Render CPG Analysis Tab")
 def render_cpg_analysis_tab():
     """Render the CPG Analysis tab with specialized CPG queries and visualizations."""
     # Check if data has been loaded
@@ -145,12 +146,12 @@ def render_cpg_analysis_tab():
     with st.spinner("Building queries..."):
         display_cpg_analysis_queries()
 
-
+@task(name="Toggle Advanced Options")
 def toggle_advanced_options():
     """Toggle the visibility of advanced options."""
     st.session_state.show_advanced_options = not st.session_state.show_advanced_options
 
-
+@flow(name="DataPlor")
 def main():
     """Main function to run the Streamlit application."""
     # Setup page configuration and styling
