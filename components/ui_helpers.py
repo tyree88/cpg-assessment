@@ -121,8 +121,10 @@ def render_footer():
     """, unsafe_allow_html=True)
 
 def render_welcome_section():
-    """Render the welcome section with getting started information."""
-    st.markdown("<h3 class='section-header'>📋 Getting Started</h3>", unsafe_allow_html=True)
+    st.markdown("<h2 class='section-header'>📋 Getting Started</h2>", unsafe_allow_html=True)
+    
+    # Warning about known issues
+    st.warning("⚠️ **Known Issue**: When you run a query it will take you back to the home tab.. this is issue still being ironed out")
     
     # Quick start guide prominently displayed
     st.markdown("""

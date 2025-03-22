@@ -115,7 +115,6 @@ def render_data_cleaning_tab():
         for i, rec in enumerate(recommendations):
             with st.expander(f"**Issue**: {rec.get('issue', '')}"):
                 
-                st.markdown(f"**Impact**: {rec.get('impact', '')}")
                 
                 st.markdown("**Recommended Actions:**")
                 for action in rec.get('actions', []):
@@ -187,11 +186,11 @@ def main():
                     st.session_state.analysis = analyze_data(st.session_state.df, st.session_state.table_name)
                     st.session_state.issues = identify_data_quality_issues(st.session_state.df, st.session_state.analysis, st.session_state.table_name)
                 
-                # Mark this step as completed
-                st.session_state.completed_steps.add('analysis')
-                st.session_state.active_step = 2
+                # Mark all steps as completed
+                st.session_state.completed_steps = {'analysis', 'load', 'clean', 'queries', 'report'}
+                st.session_state.active_step = 6  # Set to last step to show all as completed
                 
-                # Show workflow progress steps immediately after analysis
+                # Show workflow progress steps with all steps completed
                 create_progress_steps(
                     ["Load Data", "Analyze", "Clean Data", "CPG Queries", "Generate Report"],
                     st.session_state.active_step,

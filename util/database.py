@@ -13,12 +13,19 @@ from datetime import datetime
 from typing import Optional
 from prefect import task
 from contextlib import contextmanager
+from dotenv import load_dotenv
 
+# Load environment variables from .env file
+load_dotenv()
 
 # Simple logging with print statements
 
 # Database configuration
-DATABASE_URL = "md:"  # MotherDuck connection string
+MOTHERDUCK_TOKEN = os.getenv("MOTHERDUCK_TOKEN")
+if not MOTHERDUCK_TOKEN:
+    raise ValueError("MOTHERDUCK_TOKEN environment variable is required. Please check your .env file.")
+
+DATABASE_URL = f"md:my_db?motherduck_token={MOTHERDUCK_TOKEN}"  # MotherDuck connection string
 
 # Single connection instance for simple applications
 _connection = None
@@ -28,13 +35,13 @@ def get_db_connection(db_path=DATABASE_URL):
     """Context manager for database connections.
     
     Args:
-        db_path: Path to the database
+        db_path: Path to the database or MotherDuck connection string
         
     Yields:
         Active DuckDB connection
     """
     try:
-        # Create a connection to DuckDB
+        # Create a connection to DuckDB/MotherDuck
         connection = duckdb.connect(db_path)
         
         # Basic configuration
