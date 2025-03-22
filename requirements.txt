@@ -21,3 +21,4 @@ pytest
 prefect
 duckdb
 python-dotenv
+polars
