@@ -14,10 +14,9 @@ import numpy as np
 from util.analysis import analyze_data
 from util.cleaning import identify_data_quality_issues, generate_cleaning_recommendations, clean_data
 from util.styles import apply_all_styles
-from util.session_state import get_session_state, set_session_state
 
 # Import components
-from components.data_analysis import display_column_analysis, display_quality_issues, display_data_overview
+from components.data_analysis import display_column_analysis, display_data_overview
 from components.data_cleaning import display_data_completeness_options, display_deduplication_options, display_basic_cleaning_options
 from components.cpg_metrics import render_cpg_metrics_tabs
 from components.data_report import render_data_quality_report
@@ -120,19 +119,12 @@ def render_overview():
 
 def render_data_analysis_tab():
     """Render the Data Analysis tab with data loading and analysis sections."""
-    st.markdown('<h2 class="sub-header">Data Analysis</h2>', unsafe_allow_html=True)
-    
     # Check if data has been loaded
     if st.session_state.df is None or st.session_state.table_name is None:
         render_no_data_message("analysis")
         return
     
-    # Show workflow progress steps
-    create_progress_steps(
-        ["Load Data", "Analyze", "Explore Issues", "Clean Data", "Generate Report"],
-        st.session_state.active_step,
-        st.session_state.completed_steps
-    )
+    # Progress steps are only shown after the success message when data is loaded
     
     # Progress indicator
     progress_container = st.container()
@@ -147,7 +139,7 @@ def render_data_analysis_tab():
         
         # Mark this step as completed
         st.session_state.completed_steps.add('analysis')
-        st.session_state.active_step = 2
+        st.session_state.active_step = 2  # Keep at 2 since we still want to move to the second step
     
     # Show a success message if analysis is complete
     if 'analysis' in st.session_state.completed_steps:
@@ -158,13 +150,10 @@ def render_data_analysis_tab():
         render_key_metrics(st.session_state.analysis)
     
     # Create a more intuitive tabbed interface with icons
-    analysis_tabs = st.tabs(["📊 Data Overview", "🔍 Quality Issues", "📋 Column Analysis"])
+    analysis_tabs = st.tabs(["📊 Data Overview", "📋 Column Analysis"])
     
     # Display data overview
     display_data_overview(analysis_tabs)
-    
-    # Display quality issues
-    display_quality_issues(analysis_tabs)
     
     # Display column analysis
     display_column_analysis(analysis_tabs)
@@ -173,6 +162,10 @@ def render_data_analysis_tab():
 def render_data_cleaning_tab():
     """Render the Data Cleaning tab with recommendations and cleaning options."""
     st.markdown('<h2 class="sub-header">Data Cleaning</h2>', unsafe_allow_html=True)
+    
+    # Update active step to cleaning (step 3 in our new structure)
+    if 'analysis' in st.session_state.completed_steps:
+        st.session_state.active_step = 3
     
     # Check if data has been loaded
     if st.session_state.df is None or st.session_state.table_name is None:
@@ -291,6 +284,12 @@ def main():
                 st.session_state.df = df
                 st.session_state.table_name = table_name
                 st.success(f"Loaded {len(df)} records from {table_name}")
+                # Show workflow progress steps immediately after success message
+                create_progress_steps(
+                    ["Load Data", "Analyze", "Clean Data", "Generate Report"],
+                    st.session_state.active_step,
+                    st.session_state.completed_steps
+                )
             else:
                 st.error(f"Failed to load data from {selected_table}. Please check the database connection.")
     

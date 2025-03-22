@@ -94,8 +94,16 @@ def mark_step_complete(step_name: str, advance_to: Optional[int] = None) -> None
     
     st.session_state.completed_steps.add(step_name)
     
+    # Map old step numbers to new step numbers (after removing 'Explore Issues')
+    # Old: 1=Load, 2=Analyze, 3=Explore, 4=Clean, 5=Report
+    # New: 1=Load, 2=Analyze, 3=Clean, 4=Report
     if advance_to is not None:
-        st.session_state.active_step = advance_to
+        if advance_to == 4:  # If trying to go to old step 4 (Clean)
+            st.session_state.active_step = 3  # Go to new step 3 (Clean)
+        elif advance_to == 5:  # If trying to go to old step 5 (Report)
+            st.session_state.active_step = 4  # Go to new step 4 (Report)
+        else:
+            st.session_state.active_step = advance_to
 
 
 def is_step_complete(step_name: str) -> bool:

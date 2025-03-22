@@ -18,10 +18,15 @@ def render_data_source_selector() -> Tuple[str, bool]:
     """
     from util.database import get_tables
     
-    # Create columns for data source selection
-    source_col1, source_col2 = st.columns([3, 1])
+    # Create columns for data source selection - rearranged to put load button on left
+    source_col1, source_col2 = st.columns([1, 3])
     
     with source_col1:
+        # Load button with prominent styling
+        st.markdown("<p>Click to load the selected data:</p>", unsafe_allow_html=True)
+        load_clicked = st.button("📊 Load Data", key="load_data_btn", use_container_width=True)
+    
+    with source_col2:
         # Get actual tables from DuckDB
         table_options = get_tables()
         
@@ -30,11 +35,8 @@ def render_data_source_selector() -> Tuple[str, bool]:
             table_options = ["No tables available"]
             
         selected_table = st.selectbox("Select a database table", table_options)
-    
-    with source_col2:
-        # Load button with prominent styling
-        st.markdown("<p>Click to load the selected data:</p>", unsafe_allow_html=True)
-        load_clicked = st.button("📊 Load Data", key="load_data_btn", use_container_width=True)
+        
+        # Only allow loading if a valid table is selected
         load_clicked = load_clicked and selected_table != "No tables available"
     
     return selected_table, False, load_clicked
@@ -81,47 +83,28 @@ def render_analysis_progress(progress_container):
 
 def render_key_metrics(analysis: Dict[str, Any]):
     """
-    Render key metrics cards based on analysis results.
+    Render key metrics based on analysis results.
     
     Args:
         analysis: Dictionary containing analysis results
     """
-    from components.ui_components import create_metric_card
-    
+    # Display metrics in a cleaner, more streamlined way
     col1, col2, col3 = st.columns(3)
     
     with col1:
         # Calculate data quality score
         quality_score = analysis.get('quality_score', 75)
-        create_metric_card(
-            "Data Quality Score", 
-            f"{quality_score}%", 
-            "Overall quality assessment", 
-            "📊",
-            quality_score >= 70
-        )
+        st.metric("Data Quality Score", f"{quality_score}%")
     
     with col2:
         # Get issue counts
         critical_issues = len(st.session_state.issues.get('critical', []))
-        create_metric_card(
-            "Critical Issues", 
-            critical_issues, 
-            "Issues requiring immediate attention", 
-            "⚠️",
-            critical_issues == 0
-        )
+        st.metric("Critical Issues", critical_issues)
     
     with col3:
         # Get completeness score
         completeness = analysis.get('completeness', 85)
-        create_metric_card(
-            "Data Completeness", 
-            f"{completeness}%", 
-            "Percentage of non-null values", 
-            "✓",
-            completeness >= 80
-        )
+        st.metric("Data Completeness", f"{completeness}%")
 
 def render_advanced_options():
     """Render advanced analysis options in an expander."""
@@ -172,11 +155,8 @@ def render_welcome_section():
     
     # Add data loader element below the welcome message
     st.markdown("<h4 style='margin-top: 1rem;'>Select Your Data Source</h4>", unsafe_allow_html=True)
-    st.markdown("""<div class="metric-card">""", unsafe_allow_html=True)
     
     # Render data source selector
     selected_table, use_sample, load_clicked = render_data_source_selector()
-    
-    st.markdown("</div>", unsafe_allow_html=True)
     
     return selected_table, use_sample, load_clicked

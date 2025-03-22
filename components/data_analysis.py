@@ -37,9 +37,6 @@ def display_data_overview(analysis_tabs):
             })
         
         st.dataframe(pd.DataFrame(column_info), use_container_width=True)
-        
-
-        render_advanced_options()
 
 def display_quality_issues(analysis_tabs):
     """Display data quality issues categorized by severity."""
@@ -88,7 +85,7 @@ def display_quality_issues(analysis_tabs):
 
 def display_column_analysis(analysis_tabs):
     """Display detailed analysis for a selected column."""
-    with analysis_tabs[2]:
+    with analysis_tabs[1]:
         st.subheader("Column Analysis")
         
         # Allow user to select a column for detailed analysis
@@ -101,6 +98,9 @@ def display_column_analysis(analysis_tabs):
                 # Column statistics
                 st.markdown('<div style="padding: 15px; background-color: #f5f5f5; border-radius: 5px;">', unsafe_allow_html=True)
                 st.markdown(f"**Column Statistics: {selected_column}**")
+                
+                # Add advanced options expander here
+                render_advanced_options()
                 
                 # Get column data
                 col_data = st.session_state.df[selected_column]
